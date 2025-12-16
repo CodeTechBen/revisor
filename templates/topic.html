@@ -1,0 +1,31 @@
+{% extends "base.html" %} {% block title %}{{ topic.topic_name }}{% endblock %}
+{% block content %}
+
+<h2>{{ topic.topic_name }}</h2>
+
+<!-- Action Buttons -->
+<div class="actions">
+  <a href="/topics/{{ topic.topic_id }}/test">
+    <button>Take Test</button>
+  </a>
+
+  <a href="/topics/{{ topic.topic_id }}/questions/new">
+    <button>Add Questions</button>
+  </a>
+</div>
+
+<!-- Questions List -->
+<section class="questions">
+  {% if questions %}
+  <h3>Questions:</h3>
+  <ul>
+    {% for q in questions %}
+    <li>{{ q.question_text }}</li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p>No questions yet. Add one using the button above.</p>
+  {% endif %}
+</section>
+
+{% endblock %}

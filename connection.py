@@ -34,6 +34,22 @@ def delete_topic_from_db(topic_id: int):
     conn.commit()
     conn.close()
 
+def get_topic_by_id(topic_id: int):
+    topics = get_all_topics()
+    for topic in topics:
+        if topic["topic_id"] == topic_id:
+            return topic
+    return None
+
+def get_questions_for_topic(topic_id: int):
+    conn = get_connection()
+    with conn.cursor() as cur:
+        cur.execute(
+            "SELECT question_id, question_text FROM question WHERE topic_id = %s;",
+            (topic_id,))
+        questions = cur.fetchall()
+    conn.close()
+    return [{"question_id": q[0], "question_text": q[1]} for q in questions]
 
 if __name__ == "__main__":
     pass
