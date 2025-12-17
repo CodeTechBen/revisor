@@ -1,63 +1,63 @@
-{% extends "base.html" %}
-
-{% block title %}Add Question{% endblock %}
-
-{% block content %}
+{% extends "base.html" %} {% block title %}Add Question{% endblock %} {% block
+content %}
 
 <h2>Add Question</h2>
 
 <form method="post">
-
-  <label>Question:</label><br>
-  <input type="text" name="question_text" required style="width: 100%;"><br><br>
+  <label>Question:</label><br />
+  <input
+    type="text"
+    name="question_text"
+    required
+    style="width: 100%"
+  /><br /><br />
 
   <h3>Answers</h3>
 
   <div id="answers">
     <div class="answer-row">
-      <input type="text" name="answers[]" required style="width: 95%;">
-      <input type="checkbox" name="correct_answers[]" value="0">
+      <input type="text" name="answers[]" required style="width: 95%" />
+      <input type="checkbox" name="correct_answers[]" value="0" />
       Correct
     </div>
   </div>
 
-  <br>
+  <br />
   <button type="button" onclick="addAnswer()">➕ Add new answer</button>
 
-  <br><br>
+  <br /><br />
 
-  <label>Notes / Context (optional):</label><br>
+  <label>Notes / Context (optional):</label><br />
   <textarea
     name="context"
     rows="5"
-    style="width: 100%;"
+    style="width: 100%"
     placeholder="Extra explanation, hints, or notes..."
   ></textarea>
 
-  <br><br>
+  <br /><br />
 
   <button type="submit">Save Question</button>
-
 </form>
 
 <script>
-let answerIndex = 1;
+  let answerIndex = 1;
 
-function addAnswer() {
-  const container = document.getElementById("answers");
+  function addAnswer() {
+    const container = document.getElementById("answers");
 
-  const div = document.createElement("div");
-  div.className = "answer-row";
+    const div = document.createElement("div");
+    div.className = "answer-row";
 
-  div.innerHTML = `
-    <input type="text" name="answers[]" required>
+    div.innerHTML = `
+    <input type="text" name="answers[]" required style="width: 95%;">
     <input type="checkbox" name="correct_answers[]" value="${answerIndex}">
     Correct
   `;
 
-  container.appendChild(div);
-  answerIndex++;
-}
+    container.appendChild(div);
+    answerIndex++;
+  }
 </script>
 
 {% endblock %}

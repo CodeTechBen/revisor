@@ -65,7 +65,7 @@ def create_question_with_answers(topic_id, question_text, answers, correct_indic
     for idx, answer_text in enumerate(answers):
         cur.execute(
             """
-            INSERT INTO answer (question_id, answer_text, is_true)
+            INSERT INTO answer (question_id, answer_text, is_correct)
             VALUES (%s, %s, %s)
             """,
             (question_id, answer_text, idx in correct_indices)
@@ -73,7 +73,7 @@ def create_question_with_answers(topic_id, question_text, answers, correct_indic
 
     if context:
         cur.execute(
-            "UPDATE question SET context = %s WHERE question_id = %s",
+            "UPDATE question SET contextual_info = %s WHERE question_id = %s",
             (context, question_id)
         )
 
