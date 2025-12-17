@@ -52,23 +52,34 @@ def get_questions_for_topic(topic_id: int):
     return [{"question_id": q[0], "question_text": q[1]} for q in questions]
 
 
-def create_question_with_answers(topic_id: int, question_text: str, answers: list, correct_indices: list, context: str = ""):
+def create_question_with_answers(topic_id, question_text, answers, correct_indices, context=None):
     conn = get_connection()
-    with conn.cursor() as cur:
-        # Insert question
-        cur.execute(
-            "INSERT INTO question (topic_id, question_text, contextual_info) VALUES (%s, %s, %s) RETURNING question_id;",
-            (topic_id, question_text, context))
-        question_id = cur.fetchone()[0]
+    cur = conn.cursor()
 
-        # Insert answers
-        for idx, answer_text in enumerate(answers):
-            is_correct = idx in correct_indices
-            cur.execute(
-                "INSERT INTO answer (question_id, answer_text, is_correct) VALUES (%s, %s, %s);",
-                (question_id, answer_text, is_correct))
+    cur.execute(
+        "INSERT INTO question (topic_id, question_text) VALUES (%s, %s) RETURNING question_id",
+        (topic_id, question_text)
+    )
+    question_id = cur.fetchone()[0]
+
+    for idx, answer_text in enumerate(answers):
+        cur.execute(
+            """
+            INSERT INTO answer (question_id, answer_text, is_true)
+            VALUES (%s, %s, %s)
+            """,
+            (question_id, answer_text, idx in correct_indices)
+        )
+
+    if context:
+        cur.execute(
+            "UPDATE question SET context = %s WHERE question_id = %s",
+            (context, question_id)
+        )
+
     conn.commit()
     conn.close()
+
 
 if __name__ == "__main__":
     pass

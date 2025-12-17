@@ -31,23 +31,25 @@ def topic_page(topic_id):
 def add_questions(topic_id):
     if request.method == "POST":
         question_text = request.form["question_text"].strip()
-        answers = [
-            request.form["answer1"].strip(),
-            request.form["answer2"].strip(),
-            request.form["answer3"].strip(),
-            request.form["answer4"].strip()
-        ]
-        context = request.form.get("context", "").strip()  # optional
+        answers = request.form.getlist("answers[]")
+        correct_indices = request.form.getlist("correct_answers[]")
+        context = request.form.get("context", "").strip()
 
-        # Get list of correct answers (may be empty)
-        correct_indices = request.form.getlist("correct_answers")
-        correct_indices = [int(i)-1 for i in correct_indices]  # convert to 0-based index
+        # Convert correct indices to integers
+        correct_indices = {int(i) for i in correct_indices}
 
-        create_question_with_answers(topic_id, question_text, answers, correct_indices, context)
+        create_question_with_answers(
+            topic_id,
+            question_text,
+            answers,
+            correct_indices,
+            context
+        )
 
         return redirect(url_for("topic_page", topic_id=topic_id))
 
     return render_template("add_questions.html", topic_id=topic_id)
+
 
 
 if __name__ == "__main__":

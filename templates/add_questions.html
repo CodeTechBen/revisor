@@ -1,25 +1,63 @@
 {% extends "base.html" %}
 
-{% block title %}Add Questions{% endblock %}
+{% block title %}Add Question{% endblock %}
 
 {% block content %}
 
-<h2>Add Question for Topic {{ topic_id }}</h2>
+<h2>Add Question</h2>
 
-<form action="" method="post">
-  <label>Question Text:</label><br>
-  <input type="text" name="question_text" required><br><br>
+<form method="post">
 
-  {% for i in range(1, 5) %}
-    <label>Answer {{ i }}:</label><br>
-    <input type="text" name="answer{{ i }}" required>
-    <input type="checkbox" name="correct_answers" value="{{ i }}"> Correct<br><br>
-  {% endfor %}
+  <label>Question:</label><br>
+  <input type="text" name="question_text" required style="width: 100%;"><br><br>
 
-  <label>Extra Context / Notes (optional):</label><br>
-  <input type="text" name="context"><br><br>
+  <h3>Answers</h3>
 
-  <button type="submit">Add Question</button>
+  <div id="answers">
+    <div class="answer-row">
+      <input type="text" name="answers[]" required style="width: 95%;">
+      <input type="checkbox" name="correct_answers[]" value="0">
+      Correct
+    </div>
+  </div>
+
+  <br>
+  <button type="button" onclick="addAnswer()">➕ Add new answer</button>
+
+  <br><br>
+
+  <label>Notes / Context (optional):</label><br>
+  <textarea
+    name="context"
+    rows="5"
+    style="width: 100%;"
+    placeholder="Extra explanation, hints, or notes..."
+  ></textarea>
+
+  <br><br>
+
+  <button type="submit">Save Question</button>
+
 </form>
+
+<script>
+let answerIndex = 1;
+
+function addAnswer() {
+  const container = document.getElementById("answers");
+
+  const div = document.createElement("div");
+  div.className = "answer-row";
+
+  div.innerHTML = `
+    <input type="text" name="answers[]" required>
+    <input type="checkbox" name="correct_answers[]" value="${answerIndex}">
+    Correct
+  `;
+
+  container.appendChild(div);
+  answerIndex++;
+}
+</script>
 
 {% endblock %}
