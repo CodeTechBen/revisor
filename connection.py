@@ -1,4 +1,5 @@
 import psycopg2
+from typing import Optional
 
 def get_connection() -> psycopg2.extensions.connection:
     """Establishes and returns a connection to the PostgreSQL database."""
@@ -52,30 +53,33 @@ def get_questions_for_topic(topic_id: int):
     return [{"question_id": q[0], "question_text": q[1]} for q in questions]
 
 
-def create_question_with_answers(topic_id, question_text, answers, correct_indices, context=None):
+def create_question_with_answers(topic_id: int, question_text: str, answers: list[str], correct_indices: set[int], context: Optional[str] = None):
     conn = get_connection()
-    cur = conn.cursor()
-
-    cur.execute(
-        "INSERT INTO question (topic_id, question_text) VALUES (%s, %s) RETURNING question_id",
-        (topic_id, question_text)
-    )
-    question_id = cur.fetchone()[0]
-
-    for idx, answer_text in enumerate(answers):
+    with conn.cursor() as cur:
         cur.execute(
-            """
-            INSERT INTO answer (question_id, answer_text, is_correct)
-            VALUES (%s, %s, %s)
-            """,
-            (question_id, answer_text, idx in correct_indices)
+            "INSERT INTO question (topic_id, question_text) VALUES (%s, %s) RETURNING question_id",
+            (topic_id, question_text)
         )
+        row = cur.fetchone()
+        question_id = row[0] if row is not None else None
 
-    if context:
-        cur.execute(
-            "UPDATE question SET contextual_info = %s WHERE question_id = %s",
-            (context, question_id)
-        )
+        if question_id is None:
+            raise RuntimeError("Failed to insert question")
+
+        for idx, answer_text in enumerate(answers):
+            cur.execute(
+                """
+                INSERT INTO answer (question_id, answer_text, is_correct)
+                VALUES (%s, %s, %s)
+                """,
+                (question_id, answer_text, idx in correct_indices)
+            )
+
+        if context:
+            cur.execute(
+                "UPDATE question SET contextual_info = %s WHERE question_id = %s",
+                (context, question_id)
+            )
 
     conn.commit()
     conn.close()
