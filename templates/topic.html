@@ -17,14 +17,18 @@
 <!-- Questions List -->
 <section class="questions">
   {% if questions %}
-  <h3>Questions:</h3>
-  <ul>
-    {% for q in questions %}
-    <li>{{ q.question_text }}</li>
-    {% endfor %}
-  </ul>
+    <h3>Questions:</h3>
+    <ul>
+      {% for q in questions %}
+        <li>
+          <a href="{{ url_for('edit_question', question_id=q.question_id) }}">
+            {{ q.question_text }}
+          </a>
+        </li>
+      {% endfor %}
+    </ul>
   {% else %}
-  <p>No questions yet. Add one using the button above.</p>
+    <p>No questions yet. Add one using the button above.</p>
   {% endif %}
 </section>
 

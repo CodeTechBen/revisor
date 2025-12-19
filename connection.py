@@ -1,5 +1,5 @@
 import psycopg2
-from typing import Optional
+from typing import Optional, Any
 
 def get_connection() -> psycopg2.extensions.connection:
     """Establishes and returns a connection to the PostgreSQL database."""
@@ -46,7 +46,7 @@ def get_questions_for_topic(topic_id: int):
     conn = get_connection()
     with conn.cursor() as cur:
         cur.execute(
-            "SELECT question_id, question_text FROM question WHERE topic_id = %s;",
+            "SELECT question_id, question_text FROM question WHERE topic_id = %s ORDER BY question_id DESC;",
             (topic_id,))
         questions = cur.fetchall()
     conn.close()
@@ -84,6 +84,62 @@ def create_question_with_answers(topic_id: int, question_text: str, answers: lis
     conn.commit()
     conn.close()
 
+def get_topic_id_for_question(question_id: int) -> Optional[int]:
+    conn = get_connection()
+    with conn.cursor() as cur:
+        cur.execute(
+            "SELECT topic_id FROM question WHERE question_id = %s;",
+            (question_id,))
+        row = cur.fetchone()
+    conn.close()
+    if row:
+        return row[0]
+    return None
+
+def get_question_with_answers(question_id: int) -> Optional[dict[str, Any]]:
+    conn = get_connection()
+    with conn.cursor() as cur:
+        cur.execute(
+            "SELECT question_text, contextual_info FROM question WHERE question_id = %s;",
+            (question_id,))
+        question_row = cur.fetchone()
+
+        if not question_row:
+            conn.close()
+            return None
+
+        question_text, contextual_info = question_row
+
+        cur.execute(
+            "SELECT answer_id, answer_text, is_correct FROM answer WHERE question_id = %s;",
+            (question_id,))
+        answers_rows = cur.fetchall()
+
+    conn.close()
+
+    answers = [
+        {"answer_id": a[0], "answer_text": a[1], "is_correct": a[2]}
+        for a in answers_rows
+    ]
+
+    return {
+        "question_id": question_id,
+        "question_text": question_text,
+        "contextual_info": contextual_info,
+        "answers": answers
+    }
+
+def delete_question(question_id: int):
+    conn = get_connection()
+    with conn.cursor() as cur:
+        cur.execute(
+            "DELETE FROM answer WHERE question_id = %s;",
+            (question_id,))
+        cur.execute(
+            "DELETE FROM question WHERE question_id = %s;",
+            (question_id,))
+    conn.commit()
+    conn.close()
 
 if __name__ == "__main__":
     pass
