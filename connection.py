@@ -1,5 +1,6 @@
 import psycopg2
 from typing import Optional, Any
+from werkzeug.security import check_password_hash
 
 def get_connection() -> psycopg2.extensions.connection:
     """Establishes and returns a connection to the PostgreSQL database."""
@@ -160,6 +161,34 @@ def get_random_question_for_topic(topic_id: int):
 
     return get_question_with_answers(row[0])
 
+def create_user_in_db(username: str, password_hash: str):
+    conn = get_connection()
+    with conn.cursor() as cur:
+        cur.execute(
+            "INSERT INTO users (username, password_hash) VALUES (%s, %s);",
+            (username, password_hash))
+    conn.commit()
+    conn.close()
+
+def get_signed_in_user(username: str, password: str) -> Optional[int]:
+    conn = get_connection()
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT user_id, password_hash
+            FROM users
+            WHERE username = %s
+        """, (username,))
+        row = cur.fetchone()
+    conn.close()
+
+    if not row:
+        return None
+
+    user_id, password_hash = row
+
+    if not check_password_hash(password_hash, password):
+        return None
+    return user_id
 
 if __name__ == "__main__":
     pass

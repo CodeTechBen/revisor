@@ -1,7 +1,8 @@
 
 import werkzeug
+from werkzeug.security import generate_password_hash, check_password_hash
 from typing import Union
-from connection import (get_all_topics,
+from connection import (create_user_in_db, get_all_topics,
                         create_topic_in_db,
                         delete_topic_from_db,
                         get_topic_by_id,
@@ -10,16 +11,49 @@ from connection import (get_all_topics,
                         get_question_with_answers,
                         delete_question,
                         get_topic_id_for_question,
-                        get_random_question_for_topic)
+                        get_random_question_for_topic,
+                        get_signed_in_user)
 
-from flask import Flask, render_template, request, redirect, url_for, abort
+from flask import Flask, render_template, request, redirect, url_for, abort, session
 
 app = Flask(__name__)
+app.secret_key = "your_secret_key_here"  # Replace with a secure key in production
 
 @app.route("/")
 def home() -> str:
     topics = get_all_topics()
     return render_template("home.html", topics=topics)
+
+@app.route("/signup", methods=["GET", "POST"])
+def signup():
+    if request.method == "POST":
+        username = request.form["username"].strip()
+        password = request.form["password"]
+
+        password_hash = generate_password_hash(password,
+                                               method='pbkdf2:sha256',
+                                               salt_length=16)
+        create_user_in_db(username, password_hash)
+        return redirect(url_for("login"))
+
+    return render_template("signup.html")
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        username = request.form["username"]
+        password = request.form["password"]
+        
+        user_id = get_signed_in_user(username, password)
+
+        # ✅ Login success
+        session["user_id"] = user_id
+        session["username"] = username
+
+        return redirect(url_for("home"))
+
+    return render_template("login.html")
+
 
 @app.route("/topics", methods=["POST"])
 def create_topic() -> werkzeug.wrappers.response.Response:
@@ -114,6 +148,19 @@ def test_topic(topic_id: int) -> str:
         question=question
     )
 
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("home"))
+
+@app.context_processor
+def inject_user():
+    return {
+        "current_user": {
+            "id": session.get("user_id"),
+            "username": session.get("username")
+        }
+    }
 
 
 if __name__ == "__main__":

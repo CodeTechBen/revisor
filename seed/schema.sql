@@ -30,10 +30,11 @@ CREATE TABLE answer (
 
 CREATE TABLE users (
   user_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  user_name VARCHAR(32) UNIQUE NOT NULL,
+  username TEXT UNIQUE NOT NULL,
   password_hash TEXT NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
 
 CREATE TABLE answer_history (
   answer_history_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -43,8 +44,7 @@ CREATE TABLE answer_history (
   CONSTRAINT fk_history_answer
     FOREIGN KEY (answer_id) REFERENCES answer(answer_id),
   CONSTRAINT fk_history_user
-    FOREIGN KEY (user_id) REFERENCES users(user_id),
-  CONSTRAINT uq_user_answer UNIQUE (user_id, answer_id)
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
 
 -- Indexes
