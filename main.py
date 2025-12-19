@@ -154,9 +154,9 @@ def submit_answer(topic_id: int) -> werkzeug.wrappers.response.Response:
     if not user_id:
         return redirect(url_for("login"))
 
-    question_id = int(request.form["question_id"])
+    # question_id = int(request.form["question_id"])
     selected_answers = request.form.getlist("selected_answers")  # list of answer_ids
-    insert_answer_history(selected_answers, user_id, topic_id)
+    insert_answer_history(selected_answers, user_id)
 
     return redirect(url_for("test_topic", topic_id=topic_id))
 

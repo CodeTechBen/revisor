@@ -161,7 +161,7 @@ def get_random_question_for_topic(topic_id: int):
 
     return get_question_with_answers(row[0])
 
-def insert_answer_history(selected_answers: list[str], user_id: int, topic_id: int):
+def insert_answer_history(selected_answers: list[str], user_id: int):
     conn = get_connection()
     with conn.cursor() as cur:
         for answer_id in selected_answers:
