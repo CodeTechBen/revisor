@@ -1,6 +1,6 @@
 
 import werkzeug
-from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import generate_password_hash
 from typing import Union
 from connection import (create_user_in_db, get_all_topics,
                         create_topic_in_db,
@@ -108,10 +108,8 @@ def edit_question(question_id: int) -> Union[str, werkzeug.wrappers.response.Res
         if topic_id is None:
             abort(404)
 
-        # 🔥 Drop old question
         delete_question(question_id)
 
-        # 🔁 Recreate question
         create_question_with_answers(
             topic_id,
             question_text,
