@@ -15,9 +15,10 @@ from connection import (create_user_in_db, get_all_topics,
                         get_signed_in_user)
 
 from flask import Flask, render_template, request, redirect, url_for, abort, session
+from os import environ as env
 
 app = Flask(__name__)
-app.secret_key = "your_secret_key_here"  # Replace with a secure key in production
+app.secret_key = env.get("SECRET_KEY", "default")
 
 @app.route("/")
 def home() -> str:
