@@ -45,8 +45,8 @@ def login():
         password = request.form["password"]
         
         user_id = get_signed_in_user(username, password)
-
-        # ✅ Login success
+        if user_id is None:
+            return render_template("login.html", error="Invalid username or password.")
         session["user_id"] = user_id
         session["username"] = username
 
