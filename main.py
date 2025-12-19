@@ -9,7 +9,8 @@ from connection import (get_all_topics,
                         create_question_with_answers,
                         get_question_with_answers,
                         delete_question,
-                        get_topic_id_for_question)
+                        get_topic_id_for_question,
+                        get_random_question_for_topic)
 
 from flask import Flask, render_template, request, redirect, url_for, abort
 
@@ -95,6 +96,24 @@ def edit_question(question_id: int) -> Union[str, werkzeug.wrappers.response.Res
         question=result,
         answers=result["answers"]
     )
+
+@app.route("/topics/<int:topic_id>/test")
+def test_topic(topic_id: int) -> str:
+    question = get_random_question_for_topic(topic_id)
+
+    if not question:
+        return render_template(
+            "test.html",
+            topic_id=topic_id,
+            no_questions=True
+        )
+
+    return render_template(
+        "test.html",
+        topic_id=topic_id,
+        question=question
+    )
+
 
 
 if __name__ == "__main__":

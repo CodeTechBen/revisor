@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Test{% endblock %}
+
+{% block content %}
+
+<h2>Test Yourself</h2>
+
+{% if no_questions %}
+  <p>No questions available for this topic.</p>
+  <a href="{{ url_for('topic_page', topic_id=topic_id) }}">Back</a>
+{% else %}
+
+<h3>{{ question.question_text }}</h3>
+
+<ul id="answers-list">
+  {% for a in question.answers %}
+    <li
+      class="answer"
+      data-correct="{{ a.is_correct }}"
+    >
+      {{ a.answer_text }}
+    </li>
+  {% endfor %}
+</ul>
+
+<div id="context" style="display:none; margin-top:1em;">
+  <strong>Explanation:</strong>
+  <p>{{ question.contextual_info }}</p>
+</div>
+
+<div class="actions">
+  <button id="check-btn" onclick="checkAnswer()">Check Answer</button>
+
+  <a
+    href="{{ url_for('test_topic', topic_id=topic_id) }}"
+    id="next-btn"
+    style="display:none;"
+  >
+    <button>Next Question</button>
+  </a>
+
+  <a href="{{ url_for('topic_page', topic_id=topic_id) }}">
+    <button>End Test</button>
+  </a>
+</div>
+
+<script>
+function checkAnswer() {
+  const answers = document.querySelectorAll(".answer");
+
+  answers.forEach(answer => {
+    if (answer.dataset.correct === "True") {
+      answer.style.fontWeight = "bold";
+    }
+  });
+
+  document.getElementById("context").style.display = "block";
+  document.getElementById("check-btn").style.display = "none";
+  document.getElementById("next-btn").style.display = "inline";
+}
+</script>
+
+{% endif %}
+
+{% endblock %}

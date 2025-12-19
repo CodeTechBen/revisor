@@ -141,5 +141,25 @@ def delete_question(question_id: int):
     conn.commit()
     conn.close()
 
+def get_random_question_for_topic(topic_id: int):
+    conn = get_connection()
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT question_id
+            FROM question
+            WHERE topic_id = %s
+            ORDER BY RANDOM()
+            LIMIT 1;
+        """, (topic_id,))
+        row = cur.fetchone()
+
+    conn.close()
+
+    if not row:
+        return None
+
+    return get_question_with_answers(row[0])
+
+
 if __name__ == "__main__":
     pass
