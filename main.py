@@ -11,6 +11,7 @@ from connection import (create_user_in_db, get_all_topics,
                         get_question_with_answers,
                         delete_question,
                         get_topic_id_for_question,
+                        insert_answer_history,
                         get_random_question_for_topic,
                         get_signed_in_user)
 
@@ -146,6 +147,19 @@ def test_topic(topic_id: int) -> str:
         topic_id=topic_id,
         question=question
     )
+
+@app.route("/topics/<int:topic_id>/test/submit", methods=["POST"])
+def submit_answer(topic_id: int) -> werkzeug.wrappers.response.Response:
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("login"))
+
+    question_id = int(request.form["question_id"])
+    selected_answers = request.form.getlist("selected_answers")  # list of answer_ids
+    insert_answer_history(selected_answers, user_id, topic_id)
+
+    return redirect(url_for("test_topic", topic_id=topic_id))
+
 
 @app.route("/logout")
 def logout():

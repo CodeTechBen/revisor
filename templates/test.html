@@ -3,62 +3,113 @@
 
 {% block content %}
 
-<h2>Test Yourself</h2>
-
-{% if no_questions %}
-  <p>No questions available for this topic.</p>
-  <a href="{{ url_for('topic_page', topic_id=topic_id) }}">Back</a>
+{% if finished %}
+  <h2>🎉 All questions completed!</h2>
+  <a href="{{ url_for('topic_page', topic_id=topic_id) }}"><button>Back to Topic</button></a>
 {% else %}
+<h2>{{ question.question_text }}</h2>
 
-<h3>{{ question.question_text }}</h3>
+<form id="test-form" method="post" action="{{ url_for('submit_answer', topic_id=topic_id) }}">
+  <input type="hidden" name="question_id" value="{{ question.question_id }}">
 
-<ul id="answers-list">
-  {% for a in question.answers %}
-    <li
-      class="answer"
-      data-correct="{{ a.is_correct }}"
-    >
-      {{ a.answer_text }}
-    </li>
-  {% endfor %}
-</ul>
+  <div id="answers">
+    {% for a in question.answers %}
+      <button type="button" class="answer-btn"
+              data-answer-id="{{ a.answer_id }}"
+              data-correct="{{ 'True' if a.is_correct else 'False' }}"
+              onclick="selectAnswer(this)">
+        {{ a.answer_text }}
+      </button>
+      <input type="checkbox" name="selected_answers" value="{{ a.answer_id }}" hidden>
+    {% endfor %}
+  </div>
+
+  <div class="actions" style="margin-top:1em;">
+    <button type="button" id="check-btn" onclick="checkAnswer()">Check Answer</button>
+    <button type="button" id="next-btn" style="display:none;" onclick="submitAnswers()">Next Question</button>
+    <a href="{{ url_for('topic_page', topic_id=topic_id) }}">
+      <button type="button">End Test</button>
+    </a>
+  </div>
+</form>
 
 <div id="context" style="display:none; margin-top:1em;">
   <strong>Explanation:</strong>
   <p>{{ question.contextual_info }}</p>
 </div>
 
-<div class="actions">
-  <button id="check-btn" onclick="checkAnswer()">Check Answer</button>
-
-  <a
-    href="{{ url_for('test_topic', topic_id=topic_id) }}"
-    id="next-btn"
-    style="display:none;"
-  >
-    <button>Next Question</button>
-  </a>
-
-  <a href="{{ url_for('topic_page', topic_id=topic_id) }}">
-    <button>End Test</button>
-  </a>
-</div>
-
 <script>
-function checkAnswer() {
-  const answers = document.querySelectorAll(".answer");
+function selectAnswer(btn) {
+  const checkBtn = document.getElementById("check-btn");
+  if (checkBtn.dataset.checked === "true") return;
 
-  answers.forEach(answer => {
-    if (answer.dataset.correct === "True") {
-      answer.style.fontWeight = "bold";
+  btn.classList.toggle("selected");
+
+  const checkbox = btn.nextElementSibling;
+  checkbox.checked = !checkbox.checked;
+}
+
+function checkAnswer() {
+  const checkBtn = document.getElementById("check-btn");
+  const nextBtn = document.getElementById("next-btn");
+
+  const answers = document.querySelectorAll(".answer-btn");
+  answers.forEach(a => {
+    const isSelected = a.classList.contains("selected");
+    const isCorrect = a.dataset.correct === "True";
+
+    if (isCorrect) {
+      a.style.backgroundColor = "#4ade80"; // green
+      a.style.color = "white";
+      a.style.fontWeight = "bold";
+    } else if (isSelected && !isCorrect) {
+      a.style.backgroundColor = "#fca5a5"; // red
+      a.style.color = "white";
     }
+
+    // Disable further selection
+    a.disabled = true;
   });
 
+  // Show explanation/context
   document.getElementById("context").style.display = "block";
-  document.getElementById("check-btn").style.display = "none";
-  document.getElementById("next-btn").style.display = "inline";
+
+  // Switch buttons
+  checkBtn.style.display = "none";
+  nextBtn.style.display = "inline-block";
+  checkBtn.dataset.checked = "true";
+}
+
+// Submit answers and go to next question
+function submitAnswers() {
+  document.getElementById("test-form").submit();
 }
 </script>
+
+<style>
+.answer-btn {
+  display: block;
+  margin: 0.5em 0;
+  padding: 0.5em 1em;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  background-color: #f8f8f8;
+  cursor: pointer;
+  text-align: left;
+}
+
+.answer-btn.selected {
+  border-color: #2563eb;
+}
+
+.answer-btn:hover {
+  background-color: #e0f2fe;
+}
+
+.answer-btn:disabled {
+  cursor: not-allowed;
+}
+</style>
 
 {% endif %}
 
