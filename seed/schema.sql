@@ -47,6 +47,38 @@ CREATE TABLE answer_history (
     FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
 
+CREATE TABLE exam (
+  exam_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  user_id INTEGER NOT NULL,
+  start_time TIMESTAMPTZ NOT NULL DEFAULT now(),
+  end_time TIMESTAMPTZ,
+  total_questions INTEGER NOT NULL,
+  duration_minutes INTEGER NOT NULL,
+  score_percent NUMERIC,
+  CONSTRAINT fk_exam_user
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+
+CREATE TABLE exam_question (
+  exam_question_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  exam_id INTEGER NOT NULL,
+  question_id INTEGER NOT NULL,
+  CONSTRAINT fk_exam_question_exam
+    FOREIGN KEY (exam_id) REFERENCES exam(exam_id),
+  CONSTRAINT fk_exam_question_question
+    FOREIGN KEY (question_id) REFERENCES question(question_id)
+);
+
+CREATE TABLE exam_answer (
+  exam_answer_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  exam_id INTEGER NOT NULL,
+  question_id INTEGER NOT NULL,
+  answer_id INTEGER,
+  is_correct BOOLEAN,
+  CONSTRAINT fk_exam_answer_exam
+    FOREIGN KEY (exam_id) REFERENCES exam(exam_id)
+);
+
 -- Indexes
 CREATE INDEX idx_question_topic_id ON question(topic_id);
 CREATE INDEX idx_answer_question_id ON answer(question_id);

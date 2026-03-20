@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Take Exam{% endblock %}
+
+{% block content %}
+
+<h2>Time Remaining: <span id="timer"></span></h2>
+
+<form id="exam-form" method="post" data-duration="{{ exam.duration_minutes | default(0) }}">
+
+    {% for q in questions %}
+        <div class="question-block" style="margin-bottom:2em;">
+            <h3>{{ loop.index }}. {{ q.question_text }}</h3>
+
+            {% for a in q.answers %}
+                <label style="display:block; margin:5px 0;">
+                    <input type="checkbox"
+                        name="question_{{ q.question_id }}[]"
+                        value="{{ a.answer_id }}">
+                    {{ a.answer_text }}
+                </label>
+            {% endfor %}
+        </div>
+    {% endfor %}
+
+    <button type="submit">Submit Exam</button>
+
+</form>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+
+    const durationMinutes = {{ exam.duration_minutes | default(0) }};
+    console.log("Duration minutes from backend:", durationMinutes);
+
+    if (!durationMinutes || durationMinutes <= 0) {
+        console.log("No valid duration set.");
+        document.getElementById("timer").innerText = "No time limit";
+        return;
+    }
+
+    let totalSeconds = durationMinutes * 60;
+    const timerDisplay = document.getElementById("timer");
+
+    function updateTimer() {
+
+        if (totalSeconds <= 0) {
+            clearInterval(timerInterval);
+            document.getElementById("exam-form").submit();
+            return;
+        }
+
+        let minutes = Math.floor(totalSeconds / 60);
+        let seconds = totalSeconds % 60;
+
+        timerDisplay.innerText =
+            minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
+
+        console.log("Time remaining:", totalSeconds);
+        totalSeconds--;
+    }
+
+    updateTimer(); // run immediately
+    const timerInterval = setInterval(updateTimer, 1000);
+
+});
+</script>
+
+{% endblock %}

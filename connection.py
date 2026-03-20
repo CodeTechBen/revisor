@@ -1,6 +1,7 @@
 import psycopg2
 from typing import Optional, Any
 from werkzeug.security import check_password_hash
+from flask import request
 
 def get_connection() -> psycopg2.extensions.connection:
     """Establishes and returns a connection to the PostgreSQL database."""
@@ -30,9 +31,29 @@ def create_topic_in_db(topic_name: str):
 def delete_topic_from_db(topic_id: int):
     conn = get_connection()
     with conn.cursor() as cur:
+        # 1️⃣ Delete answers first
+        cur.execute(
+            """
+            DELETE FROM answer
+            WHERE question_id IN (
+                SELECT question_id FROM question WHERE topic_id = %s
+            );
+            """,
+            (topic_id,)
+        )
+
+        # 2️⃣ Delete questions
+        cur.execute(
+            "DELETE FROM question WHERE topic_id = %s;",
+            (topic_id,)
+        )
+
+        # 3️⃣ Delete the topic
         cur.execute(
             "DELETE FROM topic WHERE topic_id = %s;",
-            (topic_id,))
+            (topic_id,)
+        )
+
     conn.commit()
     conn.close()
 
@@ -172,6 +193,43 @@ def insert_answer_history(selected_answers: list[str], user_id: int):
     conn.commit()
     conn.close()
 
+def create_exam(user_id: int, num_questions: int, duration: int) -> int:
+    conn = get_connection()
+    with conn.cursor() as cur:
+
+        # Create exam
+        cur.execute("""
+            INSERT INTO exam (user_id, total_questions, duration_minutes)
+            VALUES (%s, %s, %s)
+            RETURNING exam_id
+        """, (user_id, num_questions, duration))
+
+        row = cur.fetchone()
+        exam_id = row[0] if row else None
+
+        # Random questions from all subjects
+        cur.execute("""
+            SELECT question_id
+            FROM question
+            ORDER BY RANDOM()
+            LIMIT %s
+        """, (num_questions,))
+
+        questions = cur.fetchall()
+
+        for index, q in enumerate(questions):
+            cur.execute("""
+                INSERT INTO exam_question (exam_id, question_id, position)
+                VALUES (%s, %s, %s)
+            """, (exam_id, q[0], index))
+
+        conn.commit()
+        conn.close()
+    if exam_id:
+        return exam_id
+    else:
+        raise RuntimeError("Failed to create exam")
+
 def create_user_in_db(username: str, password_hash: str):
     conn = get_connection()
     with conn.cursor() as cur:
@@ -200,6 +258,111 @@ def get_signed_in_user(username: str, password: str) -> Optional[int]:
     if not check_password_hash(password_hash, password):
         return None
     return user_id
+def get_exam(exam_id: int) -> Optional[dict[str, Any]]:
+    conn = get_connection()
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT user_id, start_time, duration_minutes, score_percent
+            FROM exam
+            WHERE exam_id = %s
+        """, (exam_id,))
+        row = cur.fetchone()
+
+    conn.close()
+
+    if not row:
+        return None
+
+    user_id, start_time, duration_minutes, score_percent = row
+
+    return {
+        "exam_id": exam_id,
+        "user_id": user_id,
+        "start_time": start_time,
+        "duration_minutes": duration_minutes,
+        "score_percent": score_percent
+    }
+
+def get_exam_questions(exam_id: int) -> list[dict[str, Any]]:
+    conn = get_connection()
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT 
+                    q.question_id, q.question_text, q.contextual_info,
+                    a.answer_id, a.answer_text, a.is_correct
+            FROM 
+                exam_question eq
+            JOIN question q ON eq.question_id = q.question_id
+            JOIN answer a ON q.question_id = a.question_id
+            WHERE eq.exam_id = %s
+            ORDER BY eq.position, a.answer_id
+        """, (exam_id,))
+        rows = cur.fetchall()
+
+    conn.close()
+
+    questions_dict = {}
+    for row in rows:
+        question_id, question_text, contextual_info, answer_id, answer_text, is_correct = row
+        if question_id not in questions_dict:
+            questions_dict[question_id] = {
+                "question_id": question_id,
+                "question_text": question_text,
+                "contextual_info": contextual_info,
+                "answers": []
+            }
+        questions_dict[question_id]["answers"].append({
+            "answer_id": answer_id,
+            "answer_text": answer_text,
+            "is_correct": is_correct
+        })
+
+    return list(questions_dict.values())
+
+
+
+def submit_exam(exam_id: int) -> dict[str, Any]:
+    conn = get_connection()
+    with conn.cursor() as cur:
+
+        questions = get_exam_questions(exam_id)
+
+        correct_count = 0
+        total = len(questions)
+
+        for q in questions:
+            # Get selected answers (list of answer_ids as strings)
+            selected_answers = request.form.getlist(f"question_{q['question_id']}[]")
+
+            # Get correct answers from DB
+            cur.execute("""
+                SELECT answer_id
+                FROM answer
+                WHERE question_id = %s AND is_correct = true
+            """, (q['question_id'],))
+            correct_answers = {str(row[0]) for row in cur.fetchall()}
+
+            # Compare sets (exact match)
+            if set(selected_answers) == correct_answers:
+                correct_count += 1
+
+        percent = (correct_count / total) * 100 if total > 0 else 0
+
+        cur.execute("""
+            UPDATE exam
+            SET end_time = now(),
+                score_percent = %s
+            WHERE exam_id = %s
+        """, (percent, exam_id))
+
+        conn.commit()
+
+    conn.close()
+    return {
+        "score_percent": percent,
+        "correct_count": correct_count,
+        "total": total
+    }
 
 if __name__ == "__main__":
     pass

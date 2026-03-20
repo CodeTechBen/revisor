@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Exam Results{% endblock %}
+
+{% block content %}
+
+<h2>Exam Results</h2>
+
+<div style="margin-bottom: 20px;">
+    <p><strong>Score:</strong> {{ score_percent }}%</p>
+    <p><strong>Correct Answers:</strong> {{ correct_count }} / {{ total }}</p>
+</div>
+
+{% if score_percent >= 80 %}
+    <p style="color: green;"><strong>Excellent work! 🎉</strong></p>
+{% elif score_percent >= 50 %}
+    <p style="color: orange;"><strong>Not bad — keep practicing!</strong></p>
+{% else %}
+    <p style="color: red;"><strong>Needs improvement — try again!</strong></p>
+{% endif %}
+
+<a href="{{ url_for('take_exam', exam_id=exam_id) }}">
+    Retake Exam
+</a>
+
+{% endblock %}

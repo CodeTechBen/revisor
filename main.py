@@ -12,6 +12,10 @@ from connection import (create_user_in_db, get_all_topics,
                         delete_question,
                         get_topic_id_for_question,
                         insert_answer_history,
+                        create_exam,
+                        submit_exam,
+                        get_exam,
+                        get_exam_questions,
                         get_random_question_for_topic,
                         get_signed_in_user)
 
@@ -160,6 +164,64 @@ def submit_answer(topic_id: int) -> werkzeug.wrappers.response.Response:
 
     return redirect(url_for("test_topic", topic_id=topic_id))
 
+@app.route("/exam/setup", methods=["GET", "POST"])
+def setup_exam():
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    if request.method == "POST":
+        num_questions = int(request.form["num_questions"])
+        duration = int(request.form["duration"])
+
+        exam_id = create_exam(session["user_id"], num_questions, duration)
+
+        return redirect(url_for("take_exam", exam_id=exam_id))
+
+    return render_template("exam_setup.html")
+
+@app.route("/exam/<int:exam_id>", methods=["GET", "POST"])
+def take_exam(exam_id):
+    if request.method == "POST":
+        submit_exam(exam_id)
+        return redirect(url_for("exam_result", exam_id=exam_id))
+
+    exam = get_exam(exam_id)
+    questions = get_exam_questions(exam_id)
+
+    return render_template("take_exam.html",
+                           exam=exam,
+                           questions=questions)
+'''
+@app.route("/exam/<int:exam_id>/result")
+def exam_result(exam_id: int):
+    result = session.get("exam_result")
+
+    if not result:
+        return redirect(url_for("take_exam", exam_id=exam_id))
+
+    return render_template(
+        "exam_result.html",
+        exam_id=exam_id,
+        score_percent=result["score_percent"],
+        correct_count=result["correct_count"],
+        total=result["total"]
+    )
+'''
+
+@app.route("/exam/<int:exam_id>/result")
+def exam_result(exam_id: int):
+    result = session.get("exam_result")
+
+    if not result:
+        return redirect(url_for("take_exam", exam_id=exam_id))
+
+    return render_template(
+        "exam_result.html",
+        exam_id=exam_id,
+        score_percent=result["score_percent"],
+        correct_count=result["correct_count"],
+        total=result["total"]
+    )
 
 @app.route("/logout")
 def logout():
